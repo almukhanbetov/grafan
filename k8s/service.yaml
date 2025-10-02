@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafan-service
+spec:
+  selector:
+    app: grafan
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: LoadBalancer
