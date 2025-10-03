@@ -36,7 +36,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: "./k8s"
-          target: "~/grafan/k8s"
+          target: "~/grafan"
 
          # 7️⃣ Деплой в K3s
       - name: Deploy to K3s
