@@ -1,41 +1,50 @@
 name: CI/CD Deploy to K3s
+
 on:
   push:
     branches: [ main ]
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Проверка кода
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Установка Go
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: '1.23'
 
+      # 3️⃣ Сборка Docker-образа
       - name: Build Docker image
         run: docker build -t ${{ secrets.DOCKER_USERNAME }}/grafan:latest .
 
+      # 4️⃣ Логин в Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # 5️⃣ Публикация образа
       - name: Push image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/grafan:latest
 
+      # 6️⃣ Копирование манифестов на VPS
       - name: Copy manifests to VPS
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "./k8s"
-          target: "~/grafan/k8s"
+          source: "./k8s/*"
+          target: "~/grafan/k8s"  # 👈 Файлы будут именно тут
 
+      # 7️⃣ Деплой в K3s
       - name: Deploy to K3s
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -43,7 +52,18 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            export KUBECONFIG=/etc/rancher/k3s/kubeconfig.yaml
+            echo "📦 Переходим в каталог манифестов"
             cd ~/grafan/k8s
+
+            echo "🧹 Проверяем структуру:"
+            ls -l
+
+            echo "🚀 Применяем манифесты"
             kubectl apply -f deployment.yaml
             kubectl apply -f service.yaml
+            kubectl apply -f prometheus.yaml
+
+            echo "⏳ Ожидаем поды..."
+            kubectl rollout status deployment grafan-deployment -n default --timeout=120s
+
+            echo "✅ Готово!"
