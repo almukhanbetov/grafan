@@ -19,7 +19,13 @@ spec:
             - containerPort: 8080
           readinessProbe:
             httpGet:
-              path: /hello
+              path: /hello  # ✅ Существующий маршрут
               port: 8080
             initialDelaySeconds: 5
             periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /hello  # ✅ Можно дублировать
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
