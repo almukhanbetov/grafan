@@ -34,7 +34,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: "./k8s"
-          target: "~/grafan"
+          target: "~/grafan/k8s"
 
       - name: Deploy to K3s
         uses: appleboy/ssh-action@v1.2.0
@@ -43,6 +43,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            export KUBECONFIG=/etc/rancher/k3s/kubeconfig.yaml
+            cd ~/grafan/k8s
             kubectl apply -f deployment.yaml
             kubectl apply -f service.yaml
